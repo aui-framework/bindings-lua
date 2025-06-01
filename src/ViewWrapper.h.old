@@ -1,0 +1,248 @@
+// AUI Framework - Declarative UI toolkit for modern C++20
+// Copyright (C) 2020-2025 Alex2772 and Contributors
+//
+// SPDX-License-Identifier: MPL-2.0
+//
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+//
+
+#pragma once
+
+#include <clg.hpp>
+#include <utility>
+#include <AUI/View/AViewContainer.h>
+#include <AUI/Util/ALayoutInflater.h>
+
+using UIToolkitView = _<AView>;
+
+class UIEngine;
+
+/**
+ * @brief Базовый класс для всех View.
+ * @lua{View}
+ */
+class ViewWrapper: public clg::lua_self, public std::enable_shared_from_this<ViewWrapper> {
+public:
+    ViewWrapper(UIEngine& uiEngine, UIToolkitView view):
+        mUiEngine(uiEngine),
+        mView(std::move(view)) {}
+
+    [[nodiscard]]
+    const UIToolkitView& view() const noexcept {
+        return mView;
+    }
+
+    /**
+     * @brief Добавить (НЕ ВЫСТАВИТЬ) каллбек на клик.
+     * @param callback lua{fun(self: View)} Каллбек
+     * @return self View
+     */
+    void clicked(clg::function callback) {
+        AObject::connect(mView->clicked, mView, [self = shared_from_this(), callback = std::move(callback)]() {
+            callback(self);
+        });
+    }
+
+    /**
+     * @brief Добавить (НЕ ВЫСТАВИТЬ) каллбек на нажатие клавиши.
+     * @param callback lua{fun(self: View, key: Key)} Каллбек
+     * @return self View
+     */
+    void addOnKeyDown(clg::function callback) {
+        AObject::connect(mView->keyPressed, mView, [self = shared_from_this(), callback = std::move(callback)](AInput::Key k) {
+            callback(self, k);
+        });
+    }
+
+    /**
+     * @brief Добавить (НЕ ВЫСТАВИТЬ) каллбек на отжатие клавиши.
+     * @param callback lua{fun(self: View, key: Key)} Каллбек
+     * @return self View
+     */
+    void addOnKeyUp(clg::function callback) {
+        AObject::connect(mView->keyReleased, mView, [self = shared_from_this(), callback = std::move(callback)](AInput::Key k) {
+            callback(self, k);
+        });
+    }
+
+    /**
+     * @brief Добавить (НЕ ВЫСТАВИТЬ) каллбек на скролл.
+     * @param callback lua{fun(self: View, delta: vec2)} Каллбек
+     * @return self View
+     */
+    void addOnMouseScroll(clg::function callback) {
+        AObject::connect(mView->mouseScrolled, mView, [self = shared_from_this(), callback = std::move(callback)](glm::ivec2 k) {
+            callback(self, k);
+        });
+    }
+
+    /**
+     * @brief Добавить (НЕ ВЫСТАВИТЬ) каллбек на получение фокуса.
+     * @param callback lua{fun(self: View)} Каллбек
+     * @return self View
+     */
+    void focused(clg::function callback) {
+        AObject::connect(mView->focusAcquired, mView, [self = shared_from_this(), callback = std::move(callback)]() {
+            callback(self);
+        });
+    }
+
+    /**
+     * @brief Добавить (НЕ ВЫСТАВИТЬ) каллбек на потерю фокуса.
+     * @param callback lua{fun(self: View)} Каллбек
+     * @return self View
+     */
+    void unfocused(clg::function callback) {
+        AObject::connect(mView->focusLost, mView, [self = shared_from_this(), callback = std::move(callback)]() {
+            callback(self);
+        });
+    }
+
+    /**
+     * @brief Заставить View пытаться заполнить всё свободное пространство в родительском View.
+     * @return self View
+     */
+    void expanding() {
+        mView->setExpanding();
+    }
+
+    /**
+     * @brief Выставить стили.
+     * @return self View
+     */
+    void setStyle(clg::table table);
+
+
+    /**
+     * @brief Выставить фокус на View.
+     */
+    void focus() {
+        mView->focus();
+    }
+
+    /**
+     * @brief Выставить включён/выключен для View.
+     * @param enabled true/false
+     * @return self View
+     */
+    void setEnabled(bool enabled) {
+        mView->setEnabled(enabled);
+    }
+
+    /**
+     * @brief Выставить видимый/невидимый для View.
+     * @param visibility
+     * @return self View
+     */
+    void setVisibility(Visibility v) {
+        mView->setVisibility(v);
+    }
+
+    /**
+     * @brief Добавить View в контейнер.
+     * @param view view
+     */
+    void addView(const _<AView>& view);
+
+    /**
+     * @brief Добавить View в контейнер, не задавая менеджер компоновки, как при добавлении в CustomLayout.
+     * @param view view
+     */
+    void addViewCustomLayout(const _<AView>& view);
+
+    void inflateView(const _<AView>& wrapper) {
+        if (auto c = std::dynamic_pointer_cast<AViewContainer>(mView)){
+            ALayoutInflater::inflate(*c, wrapper);
+        }
+    }
+
+
+    /**
+     * @brief Выставить позицию для View.
+     * @param pos
+     * @details
+     * Этот метод предназначен только для работы без менеджера компоновки (например, в контейнере CustomLayout), в
+     * противном случае метод ни на что не повлияет.
+     */
+    void setPosition(glm::ivec2 pos) {
+        mView->setPosition(pos);
+    }
+
+    /**
+     * @brief Получить позиции View
+     * @return glm::ivec2 позиции
+     */
+    glm::ivec2 getPosition() const noexcept {
+        return mView->getPosition();
+    }
+
+    /**
+     * @brief Выставить размер для View.
+     * @param size
+     * @details
+     * Этот метод предназначен только для работы без менеджера компоновки (например, в контейнере CustomLayout), в
+     * противном случае метод ни на что не повлияет.
+     */
+    void setSize(glm::ivec2 size) {
+        mView->setSize(size);
+    }
+
+    /**
+     * @brief Добавить имя для стилей.
+     * @details
+     */
+    void addStylesheetName(const AString& name) {
+        mView->addAssName(name);
+    }
+
+    /**
+     * @brief Получить размеры View
+     * @return glm::ivec2 размеры
+     */
+    glm::ivec2 getSize() const noexcept {
+        return mView->getSize();
+    }
+
+    /**
+     * @return Минимальный размер View, при котором содержимое этого View не создаст графических артефактов и недочётов.
+     */
+    glm::ivec2 getMinimumSize() {
+        return mView->getMinimumSize();
+    }
+
+
+    /**
+     * @brief Удалить View из контейнера.
+     * @param view view
+     */
+    void removeView(const _<AView>& view) {
+        if (auto c = std::dynamic_pointer_cast<AViewContainer>(mView)){
+            c->removeView(view);
+            c->applyGeometryToChildrenIfNecessary();
+        }
+    }
+
+    /**
+     * @brief Добавить все View из контейнера.
+     */
+    void removeAllViews() {
+        if (auto c = std::dynamic_pointer_cast<AViewContainer>(mView)){
+            c->removeAllViews();
+        }
+    }
+
+
+    const clg::table_view& luaObject() {
+        return self();
+    }
+
+private:
+    UIEngine& mUiEngine;
+    UIToolkitView mView;
+    std::vector<std::function<void(const UIToolkitView&)>> mModifiers;
+
+};
+
+using ViewFactoryPtr = _<AView>;
