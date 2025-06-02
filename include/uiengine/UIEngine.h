@@ -16,17 +16,11 @@
 
 class UIEngine {
 public:
-    UIEngine(AViewContainer& surface);
+    UIEngine();
 
     UIEngine(const UIEngine&) = delete;
 
     _<AView> loadForm(std::string_view file);
-
-
-    [[nodiscard]]
-    AViewContainer& surface() const noexcept {
-        return mSurface;
-    }
 
     static const char* anyToString(const clg::ref& r); // для lldb.py
     static const char* anyToString(lua_State* L, int n = -1); // для lldb.py
@@ -53,7 +47,4 @@ public:
     static void removeAllChildren(const _<AViewContainer>& cont);
 
     _<AView> wrapViewWithLuaWrapper(const _<AView>& v);
-
-private:
-    AViewContainer& mSurface;
 };

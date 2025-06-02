@@ -4,9 +4,13 @@ function HelloButton()
     end)
 end
 
-UI.setSurface(Centered {
+local win = Window("Test1")
+
+win:inflateView(Centered (
     Vertical {
         Label "Hello world!",
         HelloButton(),
     }
-})
+))
+
+win:show()
