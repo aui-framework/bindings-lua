@@ -28,11 +28,7 @@ end
 table.insert(package.searchers, 2, assets_searcher)
 package.apath = ":?.lua;:?/init.lua" -- for assets_searcher (with `:` and without `./`)
 
-function HelloButton()
-    return Button "Click me":clicked(function()
-        print("Clicked")
-    end)
-end
+local HelloButton = require "hello_button"
 
 local win = Window("Test1", 854, 500)
 
