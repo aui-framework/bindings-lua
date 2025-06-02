@@ -25,6 +25,7 @@ target_compile_definitions(clg INTERFACE CLG_MANUAL_CLEANUP=1)
 
 if (MSVC)
     add_definitions("/MP")
+    add_compile_options(/bigobj)
 endif()
 
 

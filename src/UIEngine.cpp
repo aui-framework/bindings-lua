@@ -57,15 +57,7 @@
 static constexpr auto LOG_TAG = "UIEngine";
 unsigned performance::AUI_VIEW_RENDER = 0;
 
-class UI {};
-class Window {};
-
-static _<AWindow> currentWindow() {
-    return _cast<AWindow>(AWindow::current()->sharedPtr());
-}
-
-UIEngine::UIEngine(AViewContainer& surface):
-        mSurface(surface)
+UIEngine::UIEngine()
 {
     using namespace declarative;
 
@@ -87,67 +79,6 @@ UIEngine::UIEngine(AViewContainer& surface):
     lua.set_global_value("SIGNAL_REMOVE", clg::table{});
     lua.register_enum<ATouchscreenKeyboardPolicy>("TouchscreenKeyboardPolicy");
 
-    lua.register_class<UI>()
-        .staticFunction("setSurface", [this](const _<AView>& wrapper) {
-            ALayoutInflater::inflate(mSurface, wrapper);
-        })
-        .staticFunction("stealSurface", [this]() {
-            auto wrapper = _new<LuaExposedView<AViewContainer>>(*this);
-            auto oldSurface = mSurface.getViews().first();
-            mSurface.removeView(oldSurface);
-            ALayoutInflater::inflate(wrapper, oldSurface);
-            return wrapper;
-        });
-
-    lua.register_function<currentWindow>("currentWindow");
-
-    lua.register_class<Window>()
-        .staticFunction("focusNextView", []() {
-            AUI_NULLSAFE(currentWindow())->focusNextView();
-        })
-        .staticFunction("onKeyDown", [](clg::function callback) {
-            auto window = AWindow::current();
-            AObject::connect(window->keyDown, window, [callback = std::move(callback)](AInput::Key key) {
-                callback(key);
-            });
-        })
-        .staticFunction("hideTouchscreenKeyboard", []() {
-            AUI_NULLSAFE(currentWindow())->requestHideTouchscreenKeyboard();
-        })
-        .staticFunction("showTouchscreenKeyboard", []() {
-            AUI_NULLSAFE(currentWindow())->requestShowTouchscreenKeyboard();
-        })
-        .staticFunction("setTouchscreenKeyboardPolicy", [](ATouchscreenKeyboardPolicy policy) {
-            AUI_NULLSAFE(currentWindow())->setTouchscreenKeyboardPolicy(policy);
-        })
-        .staticFunction("setScalingParams", [](float scalingFactor, std::optional<glm::uvec2> minWindowSizeDp) {
-            auto w = currentWindow();
-            if (!w) {
-                return;
-            }
-            AWindowBase::ScalingParams params;
-            params.scalingFactor = scalingFactor;
-            if (!minWindowSizeDp) {
-                params.minimalWindowSizeDp = std::nullopt;
-            }
-            else {
-                params.minimalWindowSizeDp = *minWindowSizeDp;
-            }
-            w->setScalingParams(params);
-        })
-        .staticFunction("getSize", []() -> glm::ivec2 {
-            if (auto w = currentWindow()) {
-                return w->getSize();
-            }
-            return {0, 0};
-        })
-        .staticFunction("getDpiRatio", []() -> float {
-            if (auto w = currentWindow()) {
-                return w->getDpiRatio();
-            }
-            return 0;
-        });
-
     lua.register_function<clgDump>("clgDump");
 
     lua.register_class<AAnimator>().constructor<>();
@@ -163,6 +94,26 @@ UIEngine::UIEngine(AViewContainer& surface):
         .staticFunction<Animator::create<ASizeAnimator, const glm::ivec2&, const glm::ivec2&>>("size")
         .staticFunction<Animator::create<ATranslationAnimator, const glm::vec2&, const glm::vec2&>>("translation")
         .constructor<std::shared_ptr<AAnimator>>();
+
+    expose.view<AWindow>("Window")
+            .method<&AWindow::show>("show")
+            .method<&AWindow::focusNextView>("focusNextView")
+            .method<&AWindow::requestHideTouchscreenKeyboard>("hideTouchscreenKeyboard")
+            .method<&AWindow::requestShowTouchscreenKeyboard>("showTouchscreenKeyboard")
+            .method<&AWindow::setTouchscreenKeyboardPolicy>("setTouchscreenKeyboardPolicy")
+            .method("setScalingParams", [](const _<AWindow>& window, float scalingFactor, std::optional<glm::uvec2> minWindowSizeDp) {
+                AWindowBase::ScalingParams params;
+                params.scalingFactor = scalingFactor;
+                if (!minWindowSizeDp) {
+                        params.minimalWindowSizeDp = std::nullopt;
+                }
+                else {
+                        params.minimalWindowSizeDp = *minWindowSizeDp;
+                }
+                window->setScalingParams(params);
+            })
+            .method<&AWindow::getDpiRatio>("getDpiRatio")
+            .ctor<AString, int, int>();
 
     expose.view<AView>("View")
             .ctor<>();
