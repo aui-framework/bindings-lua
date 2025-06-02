@@ -57,13 +57,6 @@
 static constexpr auto LOG_TAG = "UIEngine";
 unsigned performance::AUI_VIEW_RENDER = 0;
 
-// class UI {};
-// class Window {};
-
-// static _<AWindow> currentWindow() {
-//     return _cast<AWindow>(AWindow::current()->sharedPtr());
-// }
-
 UIEngine::UIEngine()
 {
     using namespace declarative;
@@ -104,7 +97,23 @@ UIEngine::UIEngine()
 
     expose.view<AWindow>("Window")
             .method<&AWindow::show>("show")
-            .ctor<AString>();
+            .method<&AWindow::focusNextView>("focusNextView")
+            .method<&AWindow::requestHideTouchscreenKeyboard>("hideTouchscreenKeyboard")
+            .method<&AWindow::requestShowTouchscreenKeyboard>("showTouchscreenKeyboard")
+            .method<&AWindow::setTouchscreenKeyboardPolicy>("setTouchscreenKeyboardPolicy")
+            .method("setScalingParams", [](const _<AWindow>& window, float scalingFactor, std::optional<glm::uvec2> minWindowSizeDp) {
+                AWindowBase::ScalingParams params;
+                params.scalingFactor = scalingFactor;
+                if (!minWindowSizeDp) {
+                        params.minimalWindowSizeDp = std::nullopt;
+                }
+                else {
+                        params.minimalWindowSizeDp = *minWindowSizeDp;
+                }
+                window->setScalingParams(params);
+            })
+            .method<&AWindow::getDpiRatio>("getDpiRatio")
+            .ctor<AString, int, int>();
 
     expose.view<AView>("View")
             .ctor<>();

@@ -4,7 +4,7 @@ function HelloButton()
     end)
 end
 
-local win = Window("Test1")
+local win = Window("Test1", 854, 500)
 
 win:inflateView(Centered (
     Vertical {
@@ -13,4 +13,5 @@ win:inflateView(Centered (
     }
 ))
 
+print("Win dpi scale", win:getDpiRatio())
 win:show()
