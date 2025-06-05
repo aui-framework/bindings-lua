@@ -1,5 +1,4 @@
 local function assets_searcher(libraryname)
-    print "Search package in assets"
 	local paths_sep = package.config:sub(3, 3)
 	local name_rep = package.config:sub(5, 5)
 	local paths_sep_pattern = string.format("([^%s]+)", paths_sep)
