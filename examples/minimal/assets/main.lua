@@ -8,7 +8,7 @@ local function assets_searcher(libraryname)
 	for path in string.gmatch(package.apath, paths_sep_pattern) do
 		local path = path:gsub(name_rep, libraryname)
 
-		local file_data = readAsset(path)
+		local file_data = FS.readAsset(path)
 
 		if file_data then
 			local module_func, errmsg = load(file_data, ("asset:%s"):format(path))
