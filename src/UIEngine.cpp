@@ -57,6 +57,8 @@
 static constexpr auto LOG_TAG = "UIEngine";
 unsigned performance::AUI_VIEW_RENDER = 0;
 
+class FS {};
+
 UIEngine::UIEngine()
 {
     using namespace declarative;
@@ -80,6 +82,12 @@ UIEngine::UIEngine()
     lua.register_enum<ATouchscreenKeyboardPolicy>("TouchscreenKeyboardPolicy");
 
     lua.register_function<clgDump>("clgDump");
+
+    lua.register_class<FS>()
+        .staticFunction("readAsset", [](AString path) {
+            AUrl url(path);
+            return AString::fromUtf8(AByteBuffer::fromStream(url.open())).toStdString();
+        });
 
     lua.register_class<AAnimator>().constructor<>();
     lua.register_class<Animator>()
