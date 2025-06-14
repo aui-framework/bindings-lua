@@ -11,7 +11,7 @@ local function assets_searcher(libraryname)
 		local file_data = FS.readAsset(path)
 
 		if file_data then
-			local module_func, errmsg = load(file_data, ("asset:%s"):format(path))
+			local module_func, errmsg = load(file_data, "@"..path)
 			if module_func then
 				return module_func, path
 			else
