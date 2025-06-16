@@ -103,6 +103,7 @@ UIEngine::UIEngine(AViewContainer& surface):
     lua.register_function<currentWindow>("currentWindow");
 
     lua.register_class<AClipboard>()
+        .staticFunction<AClipboard::isEmpty>("isEmpty")
         .staticFunction<AClipboard::copyToClipboard>("copyToClipboard")
         .staticFunction<AClipboard::pasteFromClipboard>("pasteFromClipboard");
 
