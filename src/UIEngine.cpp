@@ -49,6 +49,7 @@
 #include <AUI/Animator/APlaceholderAnimator.h>
 #include <AUI/Animator/ASizeAnimator.h>
 #include <AUI/Platform/AWindow.h>
+#include <AUI/Platform/AClipboard.h>
 #include "SignalHelpers.h"
 #include "clg.hpp"
 #include "View/MyTextArea.h"
@@ -100,6 +101,11 @@ UIEngine::UIEngine(AViewContainer& surface):
         });
 
     lua.register_function<currentWindow>("currentWindow");
+
+    lua.register_class<AClipboard>()
+        .staticFunction<AClipboard::isEmpty>("isEmpty")
+        .staticFunction<AClipboard::copyToClipboard>("copyToClipboard")
+        .staticFunction<AClipboard::pasteFromClipboard>("pasteFromClipboard");
 
     lua.register_class<Window>()
         .staticFunction("focusNextView", []() {
