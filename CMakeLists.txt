@@ -35,7 +35,9 @@ aui_module(${PROJECT_NAME})
 
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 
+auib_use_system_libs_begin()
 find_package(Python REQUIRED COMPONENTS Interpreter)
+auib_use_system_libs_end()
 
 function(lua_reflection _input)
     get_filename_component(_filename ${_input} NAME)
