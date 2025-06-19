@@ -16,10 +16,11 @@ include(${CMAKE_CURRENT_BINARY_DIR}/aui.boot.cmake)
 auib_import(aui https://github.com/aui-framework/aui
             COMPONENTS core views uitests
             VERSION ${AUI_VERSION})
-
-auib_import(clg https://github.com/Alex2772/cpp_lua_glue
-            VERSION "08f09ea35b3694ffee3196c8a085f4ca06731eb4"
-            ADD_SUBDIRECTORY)
+if (NOT TARGET clg)
+    auib_import(clg https://github.com/Alex2772/cpp_lua_glue
+                VERSION "08f09ea35b3694ffee3196c8a085f4ca06731eb4"
+                ADD_SUBDIRECTORY)
+endif()
 
 target_compile_definitions(clg INTERFACE CLG_MANUAL_CLEANUP=1)
 
