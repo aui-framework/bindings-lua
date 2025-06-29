@@ -453,4 +453,44 @@ namespace clg {
             return clg::push_to_lua(l, T(look));
         }
     };
+
+    template<typename T>
+    struct converter<AFuture<T>> {
+        static void when(const std::shared_ptr<clg::any_wrap>& self, clg::function callback) {
+            auto callbackShared = std::make_shared<clg::function>(std::move(callback));
+            const auto& future = std::any_cast<AFuture<T>>(*self);
+            if constexpr (std::is_same_v<T, void>) {
+                future.onSuccess([callback = callbackShared]() {
+                    AThread::main()->enqueue([callback]() {
+                        (*callback)(clg::table {
+                                { "success", clg::ref() }
+                        });
+                    });
+                });
+            }
+            else {
+                future.onSuccess([callback = callbackShared](T result) {
+                    AThread::main()->enqueue([callback, result = std::move(result)] {
+                        (*callback)(clg::table {
+                                { "success", clg::ref::from_cpp(clg::state(), result) }
+                        });
+                    });
+                });
+            }
+            future.onError([callback = callbackShared](const AException& result) {
+                AThread::main()->enqueue([callback, result = std::move(result.getMessage())] {
+                    (*callback)(clg::table {
+                            { "error", clg::ref::from_cpp(clg::state(), result) }
+                    });
+                });
+            });
+        }
+
+        static int to_lua(clg::state_interface l, AFuture<T> f) {
+            clg::push_to_lua(l, std::make_shared<clg::any_wrap>(std::move(f)));
+            clg::push_to_lua(l, clg::cfunction<when>("when"));
+            lua_setfield(l, -2, "when");
+            return 1;
+        }
+    };
 }
