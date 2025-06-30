@@ -13,14 +13,19 @@
 
 #include "AUI/ASS/unset.h"
 #include "AUI/Platform/AInput.h"
+#include "AUI/Platform/ADesktop.h"
+#include <AUI/Platform/AWindowBase.h>
+#include <AUI/Platform/AWindow.h>
 #include "AUI/Traits/values.h"
 #include "AUI/Util/AMetric.h"
 #include "AUI/Render/ARenderContext.h"
 #include "AUI/View/A2FingerTransformArea.h"
 #include "clg.hpp"
 #include "converter.hpp"
+#include "dynamic_result.hpp"
 #include "lua.h"
 #include "table.hpp"
+#include <memory>
 #include <optional>
 #include <uiengine/ILuaExposedView.h>
 #include <AUI/Common/AColor.h>
@@ -462,26 +467,20 @@ namespace clg {
             if constexpr (std::is_same_v<T, void>) {
                 future.onSuccess([callback = callbackShared]() {
                     AThread::main()->enqueue([callback]() {
-                        (*callback)(clg::table {
-                                { "success", clg::ref() }
-                        });
+                        (*callback)(true, clg::ref());
                     });
                 });
             }
             else {
                 future.onSuccess([callback = callbackShared](T result) {
                     AThread::main()->enqueue([callback, result = std::move(result)] {
-                        (*callback)(clg::table {
-                                { "success", clg::ref::from_cpp(clg::state(), result) }
-                        });
+                        (*callback)(true, clg::ref::from_cpp(clg::state(), result));
                     });
                 });
             }
             future.onError([callback = callbackShared](const AException& result) {
                 AThread::main()->enqueue([callback, result = std::move(result.getMessage())] {
-                    (*callback)(clg::table {
-                            { "error", clg::ref::from_cpp(clg::state(), result) }
-                    });
+                    (*callback)(false, clg::ref::from_cpp(clg::state(), result));
                 });
             });
         }
@@ -493,4 +492,49 @@ namespace clg {
             return 1;
         }
     };
+
+    template<>
+    struct converter<ADesktop::FileExtension> {
+        static converter_result<ADesktop::FileExtension> from_lua(lua_State* l, int n) {
+            if (!lua_istable(l, n)) {
+                return converter_error{"expected table for FileExtension"};
+            }
+
+            ADesktop::FileExtension result;
+
+            lua_getfield(l, n, "name");
+            if (!lua_isnil(l, -1)) {
+                result.name = get_from_lua<AString>(l, -1);
+            }
+            lua_pop(l, 1);
+
+            lua_getfield(l, n, "extension");
+            if (!lua_isnil(l, -1)) {
+                result.extension = get_from_lua<AString>(l, -1);
+            }
+            lua_pop(l, 1);
+
+            return result;
+        }
+
+        static int to_lua(lua_State* l, const ADesktop::FileExtension& v) {
+            lua_createtable(l, 0, 2);
+
+            push_to_lua(l, v.name);
+            lua_setfield(l, -2, "name");
+
+            push_to_lua(l, v.extension);
+            lua_setfield(l, -2, "extension");
+
+            return 1;
+        }
+    };
+
+    template<>
+    struct converter<AWindowBase*> {
+        static converter_result<AWindowBase*> from_lua(lua_State* l, int n) {
+            return AWindow::current();
+        }
+    };
+
 }

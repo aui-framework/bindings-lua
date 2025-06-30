@@ -58,6 +58,7 @@ static constexpr auto LOG_TAG = "UIEngine";
 unsigned performance::AUI_VIEW_RENDER = 0;
 
 class FS {};
+class Desktop {};
 
 UIEngine::UIEngine()
 {
@@ -82,6 +83,13 @@ UIEngine::UIEngine()
     lua.register_enum<ATouchscreenKeyboardPolicy>("TouchscreenKeyboardPolicy");
 
     lua.register_function<clgDump>("clgDump");
+
+    lua.register_enum<ADesktop::SystemSound>("SystemSound");
+
+    lua.register_class<Desktop>()
+        .staticFunction<ADesktop::playSystemSound>("playSystemSound")
+        .staticFunction<ADesktop::browseForFile>("browseForFile")
+        .staticFunction<ADesktop::browseForDir>("browseForDir");
 
     lua.register_class<FS>()
         .staticFunction("readAsset", [](AString path) {
