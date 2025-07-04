@@ -44,7 +44,7 @@ namespace {
             template<typename ViewType>
             static void connect(const _<ViewType>& self, const ASignal<Args...>& signal, clg::function callback) {
                 AObject::connect(signal, self, [self = self.get(), callback = std::move(callback)](Args... args) {
-                    callback(self->sharedPtr(), std::move(args)...);
+                    callback(aui::ptr::shared_from_this(self), std::move(args)...);
                 });
             }
 
@@ -58,7 +58,7 @@ namespace {
                         for (size_t i = 1; i <= cnt;) {
                             auto func = table[i].ref();
                             if (func.isFunction()) {
-                                auto result = clg::function(std::move(func)).call<std::optional<clg::ref>>(self->sharedPtr(), std::move(args)...);
+                                auto result = clg::function(std::move(func)).call<std::optional<clg::ref>>(aui::ptr::shared_from_this(self), std::move(args)...);
                                 if (result) {
                                     static auto SIGNAL_REMOVE = clg::state_interface(ExposeHelper::state()).global_variable("SIGNAL_REMOVE");
                                     if (*result == SIGNAL_REMOVE) {

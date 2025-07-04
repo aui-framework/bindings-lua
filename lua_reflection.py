@@ -149,9 +149,9 @@ class Parser:
                             argsNamesWithComma = f', {argNames}'
 
                         if isVoid:
-                            try_catch_wrapper(f'            (*func)(this->sharedPtr(){argsNamesWithComma});\n')
+                            try_catch_wrapper(f'            (*func)(aui::ptr::shared_from_this(this){argsNamesWithComma});\n')
                         else:
-                            try_catch_wrapper(f'            return (*func).template call<{returnType}>(this->sharedPtr(){argsNamesWithComma});\n')
+                            try_catch_wrapper(f'            return (*func).template call<{returnType}>(aui::ptr::shared_from_this(this){argsNamesWithComma});\n')
                         output.write('    }\n')
 
                         if not isVoid:

@@ -62,7 +62,7 @@ class UI {};
 class Window {};
 
 static _<AWindow> currentWindow() {
-    return _cast<AWindow>(AWindow::current()->sharedPtr());
+    return _cast<AWindow>(aui::ptr::shared_from_this(AWindow::current()));
 }
 
 UIEngine::UIEngine(AViewContainer& surface):
