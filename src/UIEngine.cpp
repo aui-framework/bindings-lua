@@ -10,6 +10,7 @@
 
 #include <uiengine/UIEngine.h>
 #include <ExposeHelper.h>
+#include <AUI/Platform/ADesktop.h>
 #include <AUI/View/ANumberPicker.h>
 #include <AUI/View/AGridSplitter.h>
 #include <AUI/View/AScrollbar.h>
@@ -49,6 +50,7 @@
 #include <AUI/Animator/APlaceholderAnimator.h>
 #include <AUI/Animator/ASizeAnimator.h>
 #include <AUI/Platform/AWindow.h>
+#include <AUI/Platform/AClipboard.h>
 #include "SignalHelpers.h"
 #include "clg.hpp"
 #include "View/MyTextArea.h"
@@ -439,7 +441,7 @@ UIEngine::UIEngine()
             .ctor<std::nullptr_t>()
             .ctor<AMetric, AMetric, AMetric, AColor>()
             .ctor<AMetric, AMetric, AMetric, AMetric, AColor>();
- 
+
     expose.rule<BoxShadowInner>()
             .ctor<std::nullptr_t>()
             .ctor<AMetric, AMetric, AMetric, AColor>()

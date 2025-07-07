@@ -212,7 +212,7 @@ ExposeHelper::ExposeHelper(UIEngine& uiEngine): mUiEngine(uiEngine)  {
             })
             .method("getParent", [] (const _<AView>& self) -> _<AView> {
                 if (auto p = self->getParent()) {
-                    return p->sharedPtr();
+                    return aui::ptr::shared_from_this(p);
                 }
 
                 return {};

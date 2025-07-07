@@ -26,7 +26,7 @@ const MySpineView::SpineCache& MySpineView::getSpineCache(const APath& prefix) {
         auto binary = _new<spine::SkeletonBinary>(atlas.get());
         auto skeletonData = [&] {
             auto buffer = AByteBuffer::fromStream(AUrl("{}.skel"_format(prefix)).open());
-            return aui::ptr::manage(
+            return aui::ptr::manage_shared(
                 binary->readSkeletonData(reinterpret_cast<const unsigned char*>(buffer.data()), buffer.size()));
         }();
         if (!binary->getError().isEmpty()) {

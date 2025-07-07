@@ -23,7 +23,7 @@ void MyDrawableView::animationFinished(const clg::function& callback) {
     if (auto animated = _cast<AAnimatedDrawable>(getDrawable())) {
         AUI_NULLSAFE(asLuaSelf(this))->luaDataHolder()["cpp_animationFinished"] = callback;
         animated->connect(animated->animationFinished, [this]() {
-            AUI_NULLSAFE(asLuaSelf(this))->luaDataHolder()["cpp_animationFinished"].invokeNullsafe(sharedPtr());
+            AUI_NULLSAFE(asLuaSelf(this))->luaDataHolder()["cpp_animationFinished"].invokeNullsafe(aui::ptr::shared_from_this(this));
         });
     }
 }

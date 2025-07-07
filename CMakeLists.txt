@@ -7,7 +7,8 @@ project(aui.bindings.lua)
 
 set(CMAKE_CXX_STANDARD 20)
 
-set(AUI_VERSION v8.0.0-rc.3)
+
+set(AUI_VERSION ad009bb4cfdaadf72cd0574a72a3a32e38336578)
 file(
         DOWNLOAD
         https://raw.githubusercontent.com/aui-framework/aui/${AUI_VERSION}/aui.boot.cmake
@@ -16,10 +17,11 @@ include(${CMAKE_CURRENT_BINARY_DIR}/aui.boot.cmake)
 auib_import(aui https://github.com/aui-framework/aui
             COMPONENTS core views uitests
             VERSION ${AUI_VERSION})
-
-auib_import(clg https://github.com/Alex2772/cpp_lua_glue
-            VERSION "08f09ea35b3694ffee3196c8a085f4ca06731eb4"
-            ADD_SUBDIRECTORY)
+if (NOT TARGET clg)
+    auib_import(clg https://github.com/Alex2772/cpp_lua_glue
+                VERSION "08f09ea35b3694ffee3196c8a085f4ca06731eb4"
+                ADD_SUBDIRECTORY)
+endif()
 
 target_compile_definitions(clg INTERFACE CLG_MANUAL_CLEANUP=1)
 
@@ -35,7 +37,9 @@ aui_module(${PROJECT_NAME})
 
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 
+auib_use_system_libs_begin()
 find_package(Python REQUIRED COMPONENTS Interpreter)
+auib_use_system_libs_end()
 
 function(lua_reflection _input)
     get_filename_component(_filename ${_input} NAME)

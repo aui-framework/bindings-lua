@@ -18,16 +18,16 @@
 MyTextArea::MyTextArea(std::string_view s) {
     ATextArea::setText(s);
     connect(textChanging, [this]() {
-        AUI_NULLSAFE(asLuaSelf(this))->luaDataHolder()["cpp_onTextChanging"].invokeNullsafe(sharedPtr());
+        AUI_NULLSAFE(asLuaSelf(this))->luaDataHolder()["cpp_onTextChanging"].invokeNullsafe(aui::ptr::shared_from_this(this));
     });
     connect(textChanged, [this]() {
-        AUI_NULLSAFE(asLuaSelf(this))->luaDataHolder()["cpp_onTextChanged"].invokeNullsafe(sharedPtr());
+        AUI_NULLSAFE(asLuaSelf(this))->luaDataHolder()["cpp_onTextChanged"].invokeNullsafe(aui::ptr::shared_from_this(this));
     });
 }
 
 void MyTextArea::onCharEntered(char16_t c) {
     ATextArea::onCharEntered(c);
     if (c == '\n' || c == '\r') {
-        AUI_NULLSAFE(asLuaSelf(this))->luaDataHolder()["cpp_onEnterPressed"].invokeNullsafe(sharedPtr());
+        AUI_NULLSAFE(asLuaSelf(this))->luaDataHolder()["cpp_onEnterPressed"].invokeNullsafe(aui::ptr::shared_from_this(this));
     }
 }
