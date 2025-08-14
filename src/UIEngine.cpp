@@ -387,7 +387,7 @@ UIEngine::UIEngine(AViewContainer& surface):
                     return _new<ASpacerExpanding>();
                 }
             });
-        })).noDefaultSpacers().build() with_style { Expanding{} };
+        })).noDefaultSpacers().build() AUI_WITH_STYLE { Expanding{} };
 
         return wrapViewWithLuaWrapper(view);
     });

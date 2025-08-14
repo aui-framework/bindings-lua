@@ -129,7 +129,7 @@ void MyForEachUI::tryFullUpdate() {
     auto list = ListAdapter(this);
     setContents(Centered { AUI_DECLARATIVE_FOR(i, list, AVerticalLayout) {
         return self["cpp_factory"].as<clg::function>().call<_<AView>>(i);
-    } with_style { Expanding() } });
+    } AUI_WITH_STYLE { Expanding() } });
 }
 
 clg::table_view MyForEachUI::model() {
@@ -137,5 +137,5 @@ clg::table_view MyForEachUI::model() {
 }
 
 void MyForEachUI::notify() {
-    emit notified;
+    emit notified();
 }
