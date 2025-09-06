@@ -76,6 +76,21 @@ namespace clg {
     };
 
     template<>
+    struct converter<AChar> {
+      static converter_result<AChar> from_lua(lua_State* l, int n) {
+        auto r = clg::get_from_lua_raw<int32_t>(l, n);
+        if (r.is_error()) {
+          return r.error();
+        }
+        return AChar(char32_t(*r));
+      }
+      static int to_lua(lua_State* l, const AChar& v) {
+        clg::push_to_lua(l, int32_t(v.codepoint()));
+        return 1;
+      }
+    };
+
+    template<>
     struct converter<AMetric> {
         static converter_result<AMetric> from_lua(lua_State* l, int n) {
             auto r = clg::get_from_lua_raw<float>(l, n);

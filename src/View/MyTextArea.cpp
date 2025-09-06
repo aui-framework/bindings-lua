@@ -25,7 +25,7 @@ MyTextArea::MyTextArea(std::string_view s) {
     });
 }
 
-void MyTextArea::onCharEntered(char16_t c) {
+void MyTextArea::onCharEntered(AChar c) {
     ATextArea::onCharEntered(c);
     if (c == '\n' || c == '\r') {
         AUI_NULLSAFE(asLuaSelf(this))->luaDataHolder()["cpp_onEnterPressed"].invokeNullsafe(aui::ptr::shared_from_this(this));

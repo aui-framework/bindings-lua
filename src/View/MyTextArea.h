@@ -48,7 +48,7 @@ public:
         AUI_NULLSAFE(asLuaSelf(this))->luaDataHolder()["cpp_onEnterPressed"] = callback;
     }
 
-    void onCharEntered(char16_t c) override;
+    void onCharEntered(AChar c) override;
 
 private:
 };

@@ -55,7 +55,7 @@ public:
     void onKeyUp(AInput::Key key) override;
     void onFocusAcquired() override;
     void onFocusLost() override;
-    void onCharEntered(char16_t c) override;
+    void onCharEntered(AChar c) override;
     bool handlesNonMouseNavigation() override;
     bool capturesFocus() override;
     void setGeometry(int x, int y, int width, int height) override;
