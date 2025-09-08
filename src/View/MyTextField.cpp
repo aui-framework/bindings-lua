@@ -25,7 +25,7 @@ MyTextField::MyTextField(std::string_view s) {
     });
 }
 
-void MyTextField::onCharEntered(char16_t c) {
+void MyTextField::onCharEntered(AChar c) {
     AAbstractTextField::onCharEntered(c);
     if (c == '\n' || c == '\r') {
         AUI_NULLSAFE(asLuaSelf(this))->luaDataHolder()["cpp_onEnterPressed"].invokeNullsafe(aui::ptr::shared_from_this(this));

@@ -56,7 +56,7 @@ public:
         AUI_NULLSAFE(asLuaSelf(this))->luaDataHolder()["cpp_isValidTextPredicate"] = predicate;
     }
 
-    bool isValidText(const AString& text) override {
+    bool isValidText(std::u32string_view text) override {
         auto luaSelf = asLuaSelf(this);
         if (!luaSelf) {
             return ATextField::isValidText(text);
@@ -67,10 +67,10 @@ public:
             return ATextField::isValidText(text);
         }
 
-        return predicate->call<bool, const AString&>(text);
+        return predicate->call<bool, const AString&>(AString::fromUtf32(text));
     }
 
-    void onCharEntered(char16_t c) override;
+    void onCharEntered(AChar c) override;
 
 private:
 };
