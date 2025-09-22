@@ -45,7 +45,7 @@ public:
      * @return Значение.
      */
     [[nodiscard]]
-    const AString& text() const noexcept {
+    AString text() const noexcept {
         return ANumberPicker::text();
     }
 

@@ -245,7 +245,7 @@ UIEngine::UIEngine(AViewContainer& surface):
             .builder<&MyTextField::setTextInputActionIcon>("setTextInputAction")
             .method("actionButtonPressed", ForwardSignal<&ATextField::actionButtonPressed, MyTextField>())
             .method("dropActionButtonPressed", DropSignal<&ATextField::actionButtonPressed, MyTextField>())
-            .method("text", [](const _<MyTextField>& t) { return t->text().value(); })
+            .method("text", [](const _<MyTextField>& t) { return *t->text(); })
             .method<&MyTextField::setText>("setText")
             .ctor<std::string_view>();
 
@@ -257,7 +257,7 @@ UIEngine::UIEngine(AViewContainer& surface):
             .builder<&MyTextArea::setTextInputActionIcon>("setTextInputAction")
             .method("actionButtonPressed", ForwardSignal<&ATextArea::actionButtonPressed, MyTextArea>())
             .method("dropActionButtonPressed", DropSignal<&ATextArea::actionButtonPressed, MyTextArea>())
-            .method("text", [](const _<MyTextArea>& t) { return t->text().value(); })
+            .method("text", [](const _<MyTextArea>& t) { return *t->text(); })
             .method<&MyTextArea::setText>("setText")
             .ctor<std::string_view>();
 
