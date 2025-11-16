@@ -89,7 +89,7 @@ public:
     }
 
     iterator begin() const {
-        aui::react::DependencyObserverRegistrar::addDependency(parent->notified);
+        aui::react::DependencyObserverScope::addDependency(parent->notified);
         return {parent, 1};
     }
 

@@ -8,7 +8,7 @@ project(aui.bindings.lua)
 set(CMAKE_CXX_STANDARD 20)
 
 
-set(AUI_VERSION 3a018214fcf194ba4928d310c49380ba9a517260)
+set(AUI_VERSION 0f0648756101d59f5e4d8d7637c66f7001232e22)
 file(
         DOWNLOAD
         https://raw.githubusercontent.com/aui-framework/aui/${AUI_VERSION}/aui.boot.cmake

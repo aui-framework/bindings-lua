@@ -46,7 +46,7 @@ void MyScrollArea::setScrollRatioY(aui::ranged_number<float, 0, 100> ratio) {
 
 AScrollArea::Builder MyScrollArea::createBuilder(_<AView> wrappedView, _<MyScrollbar> verticalScrollbar,
                                                  _<MyScrollbar> horizontalScrollbar) {
-    return AScrollArea::Builder().withContents(Vertical{std::move(wrappedView)})
+    return AScrollArea::Builder().withContents(declarative::Vertical{std::move(wrappedView)})
             .withExternalVerticalScrollbar(std::move(verticalScrollbar))
             .withExternalHorizontalScrollbar(std::move(horizontalScrollbar));
 }

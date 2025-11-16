@@ -291,7 +291,7 @@ UIEngine::UIEngine(AViewContainer& surface):
             .builder<&MySlider::setValue>("setValue")
             .builder<&MySlider::onValueChangingCallback>("onValueChangingCallback")
             .builder<&MySlider::onValueChangedCallback>("onValueChangedCallback")
-            .method<&MySlider::value>("value")
+            .method("value", [](const _<MySlider>& s) { return *s->value(); })
             .ctor<>();
 
     expose.view<MyScrollArea>("CustomScrollArea")
