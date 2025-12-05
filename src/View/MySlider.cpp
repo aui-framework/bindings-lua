@@ -21,7 +21,7 @@ using namespace declarative;
 
 MySlider::MySlider() {
     setContents(Stacked {
-        mProgress = _new<AProgressBar>() AUI_WITH_STYLE {
+        mProgress = _new<AProgressBar>() AUI_OVERRIDE_STYLE {
             Expanding{1, 0},
         },
         mHandle = _new<Handle>()

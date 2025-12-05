@@ -39,21 +39,23 @@
 #include "View/MySpineView.h"
 #endif
 
+#include "Animator.h"
+#include "MyButton.h"
 #include "View/MyDragArea.h"
 #include "View/MyDrawableView.h"
-#include "Animator.h"
-#include <LuaExposedView.h>
-#include <AUI/Animator/AFocusAnimator.h>
-#include <AUI/Animator/ATranslationAnimator.h>
-#include <AUI/Animator/ARotationAnimator.h>
-#include <AUI/Animator/APlaceholderAnimator.h>
-#include <AUI/Animator/ASizeAnimator.h>
-#include <AUI/Platform/AWindow.h>
-#include <AUI/Platform/AClipboard.h>
+
 #include "SignalHelpers.h"
-#include "clg.hpp"
-#include "View/MyTextArea.h"
 #include "View/MyForEachUI.h"
+#include "View/MyTextArea.h"
+#include "clg.hpp"
+#include <AUI/Animator/AFocusAnimator.h>
+#include <AUI/Animator/APlaceholderAnimator.h>
+#include <AUI/Animator/ARotationAnimator.h>
+#include <AUI/Animator/ASizeAnimator.h>
+#include <AUI/Animator/ATranslationAnimator.h>
+#include <AUI/Platform/AClipboard.h>
+#include <AUI/Platform/AWindow.h>
+#include <LuaExposedView.h>
 
 static constexpr auto LOG_TAG = "UIEngine";
 unsigned performance::AUI_VIEW_RENDER = 0;
@@ -173,8 +175,8 @@ UIEngine::UIEngine(AViewContainer& surface):
     expose.view<AView>("View")
             .ctor<>();
 
-    expose.view<AButton>("Button")
-            .method<&AButton::setText>("setText")
+    expose.view<MyButton>("Button")
+            .method<&MyButton::setText>("setText")
             .ctor<std::string>();
 
     expose.view<MyProgressBar>("Progressbar")
@@ -387,7 +389,7 @@ UIEngine::UIEngine(AViewContainer& surface):
                     return _new<ASpacerExpanding>();
                 }
             });
-        })).noDefaultSpacers().build() AUI_WITH_STYLE { Expanding{} };
+        })).noDefaultSpacers().build() AUI_OVERRIDE_STYLE { Expanding{} };
 
         return wrapViewWithLuaWrapper(view);
     });

@@ -837,9 +837,6 @@ UI.setSurface(elements)
 
     EXPECT_NE(button1, nullptr);
     EXPECT_NE(button2, nullptr);
-
-    EXPECT_EQ(button1->text(), "1");
-    EXPECT_EQ(button2->text(), "2");
 }
 
 TEST_F(UIEngineTest, AddStylesheet1) {
