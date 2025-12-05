@@ -89,7 +89,7 @@ public:
     }
 
     iterator begin() const {
-        aui::react::DependencyObserverRegistrar::addDependency(parent->notified);
+        aui::react::DependencyObserverScope::addDependency(parent->notified);
         return {parent, 1};
     }
 
@@ -129,7 +129,7 @@ void MyForEachUI::tryFullUpdate() {
     auto list = ListAdapter(this);
     setContents(Centered { AUI_DECLARATIVE_FOR(i, list, AVerticalLayout) {
         return self["cpp_factory"].as<clg::function>().call<_<AView>>(i);
-    } AUI_WITH_STYLE { Expanding() } });
+    } AUI_OVERRIDE_STYLE { Expanding() } });
 }
 
 clg::table_view MyForEachUI::model() {

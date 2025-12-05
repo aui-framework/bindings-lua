@@ -26,7 +26,7 @@ public:
 
     [[nodiscard]]
     float value() const noexcept {
-        return ACircleProgressBar::value();
+        return *ACircleProgressBar::value();
     }
 
     /**

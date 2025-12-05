@@ -280,7 +280,7 @@ TEST_F(UIStylesTest, TextBorder) {
 
 TEST_F(UIStylesTest, TextColor) {
     auto asTextColor = fromLua<TextColor>("TextColor('#fff')");
-    EXPECT_EQ(asTextColor.color, AColor::WHITE);
+    EXPECT_EQ(std::get<AColor>(asTextColor.color), AColor::WHITE);
 }
 
 TEST_F(UIStylesTest, TextShadow) {
