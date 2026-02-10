@@ -272,6 +272,10 @@ ExposeHelper::ExposeHelper(UIEngine& uiEngine): mUiEngine(uiEngine)  {
             .builder_method<&AView::setBlockClicksWhenPressed>("setBlockClicksWhenPressed")
             .builder_method<&AView::setPosition>("setPos")
             .method<&AView::getPosition>("getPos")
+            .method("getPos2", [](const _<AView>& self) {
+                auto position = self->getPosition();
+                return std::make_tuple(position.x, position.y);
+             })
             .builder_method<&AView::setSize>("setSize")
             .method("enableRenderToTexture", [](const _<AView>& self) {
                 IRenderViewToTexture::enableForView(AWindow::current()->getRenderingContext()->renderer(), *self);
@@ -279,6 +283,10 @@ ExposeHelper::ExposeHelper(UIEngine& uiEngine): mUiEngine(uiEngine)  {
             .builder_method<&AView::addAssName>("addStylesheetName")
             .builder_method<&AView::removeAssName>("removeStylesheetName")
             .method<&AView::getSize>("getSize")
+            .method("getSize2", [](const _<AView>& self) {
+                auto size = self->getSize();
+                return std::make_tuple(size.x, size.y);
+             })
             .method<&AView::getMinimumSize>("getMinimumSize")
             .method("isPressed", [](const _<AView>& self) {
                 return self->isPressed();
