@@ -288,6 +288,10 @@ ExposeHelper::ExposeHelper(UIEngine& uiEngine): mUiEngine(uiEngine)  {
                 return std::make_tuple(size.x, size.y);
              })
             .method<&AView::getMinimumSize>("getMinimumSize")
+            .method("getMinimumSize2", [](const _<AView>& self) {
+                auto size = self->getMinimumSize();
+                return std::make_tuple(size.x, size.y);
+             })
             .method("isPressed", [](const _<AView>& self) {
                 return self->isPressed();
             })
