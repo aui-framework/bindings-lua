@@ -18,23 +18,33 @@
 AMap<AString, MySpineView::SpineCache> MySpineView::ourCache;
 
 const MySpineView::SpineCache& MySpineView::getSpineCache(const APath& prefix) {
-    return ourCache.getOrInsert(prefix, [&] {
-        auto atlas = [&] {
-            auto buffer = AByteBuffer::fromStream(AUrl("{}.atlas"_format(prefix)).open());
-            return _new<spine::Atlas>(buffer.data(), buffer.size(), prefix.parent().toStdString().c_str(), &ASpineView::TEXTURE_LOADER);
-        }();
-        auto binary = _new<spine::SkeletonBinary>(atlas.get());
-        auto skeletonData = [&] {
-            auto buffer = AByteBuffer::fromStream(AUrl("{}.skel"_format(prefix)).open());
-            return aui::ptr::manage_shared(
-                binary->readSkeletonData(reinterpret_cast<const unsigned char*>(buffer.data()), buffer.size()));
-        }();
-        if (!binary->getError().isEmpty()) {
-            throw AException("SkeletonBinary failed: {}"_format(binary->getError().buffer()));
-        }
+    try
+    {
+        return ourCache.getOrInsert(prefix, [&] {
+            auto atlas = [&] {
+                auto buffer = AByteBuffer::fromStream(AUrl("{}.atlas"_format(prefix)).open());
+                return _new<spine::Atlas>(buffer.data(), buffer.size(), prefix.parent().toStdString().c_str(), &ASpineView::TEXTURE_LOADER);
+            }();
+            auto binary = _new<spine::SkeletonBinary>(atlas.get());
+            auto skeletonData = [&] {
+                auto buffer = AByteBuffer::fromStream(AUrl("{}.skel"_format(prefix)).open());
+                return aui::ptr::manage_shared(
+                    binary->readSkeletonData(reinterpret_cast<const unsigned char*>(buffer.data()), buffer.size()));
+            }();
+            if (!binary->getError().isEmpty()) {
+                throw AException("SkeletonBinary failed: {}"_format(binary->getError().buffer()));
+            }
+            if (skeletonData == nullptr)
+            {
+                throw AException("SkeletonBinary failed: no skeleton data");
+            }
 
-        return SpineCache{ .atlas = std::move(atlas), .skeletonData = std::move(skeletonData), .binary = std::move(binary) };
-    });
+            return SpineCache{ .atlas = std::move(atlas), .skeletonData = std::move(skeletonData), .binary = std::move(binary) };
+        });
+    } catch (const AException& e)
+    {
+        throw AException("can't read spine animation \"{}\""_format(prefix));
+    }
 }
 
 MySpineView::MySpineView(APath prefix): MySpineView(getSpineCache(prefix)) {
@@ -43,6 +53,10 @@ MySpineView::MySpineView(APath prefix): MySpineView(getSpineCache(prefix)) {
 
 MySpineView::MySpineView(const MySpineView::SpineCache& cacheEntry):
   ASpineView(cacheEntry.atlas, cacheEntry.skeletonData, _new<spine::AnimationStateData>(cacheEntry.skeletonData.get())) {
+    if (animationStateData() == nullptr)
+    {
+        throw AException("can't read spine animation \"{}\": animationStateData() is null"_format(mPrefix));
+    }
     animationStateData()->setDefaultMix(0.2f);
 }
 
