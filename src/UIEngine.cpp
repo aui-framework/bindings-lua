@@ -133,7 +133,7 @@ UIEngine::UIEngine(AViewContainer& surface):
             if (!w) {
                 return;
             }
-            AWindowBase::ScalingParams params;
+            AWindow::ScalingParams params;
             params.scalingFactor = scalingFactor;
             if (!minWindowSizeDp) {
                 params.minimalWindowSizeDp = std::nullopt;
