@@ -129,6 +129,8 @@ ExposeHelper::ExposeHelper(UIEngine& uiEngine): mUiEngine(uiEngine)  {
                 return clg::builder_return_type{};
             })
             .builder_method<&AView::setEnabled>("setEnabled")
+            .method<&AView::getVisibility>("getVisibility")
+            .method<&AView::getVisibilityRecursive>("getVisibilityRecursive")
             .builder_method<&AView::setVisibility>("setVisibility")
             .method("inflateView", [&] (const _<AView>& self, const _<AView>& wrapped) {
                 if (auto c = _cast<AViewContainer>(self)) {
