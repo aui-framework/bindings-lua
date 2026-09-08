@@ -135,14 +135,12 @@ ExposeHelper::ExposeHelper(UIEngine& uiEngine): mUiEngine(uiEngine)  {
             .method("inflateView", [&] (const _<AView>& self, const _<AView>& wrapped) {
                 if (auto c = _cast<AViewContainer>(self)) {
                     ALayoutInflater::inflate(*c, wrapped);
-                    c->markMinContentSizeInvalid();
                 }
                 return clg::builder_return_type{};
             })
             .method("removeAllViews", [] (const _<AView>& self) {
                 if (auto c = _cast<AViewContainer>(self)) {
                     c->removeAllViews();
-                    c->markMinContentSizeInvalid();
                     UIEngine::removeAllChildren(c);
                 }
                 return clg::builder_return_type{};
@@ -152,8 +150,6 @@ ExposeHelper::ExposeHelper(UIEngine& uiEngine): mUiEngine(uiEngine)  {
                     c->addViewCustomLayout(view);
                     UIEngine::addChild(c, view);
                     self->invalidateAssHelper();
-                    if(c->getParent()) c->applyGeometryToChildrenIfNecessary();
-                    c->markMinContentSizeInvalid();
                 }
                 return clg::builder_return_type{};
             })
@@ -164,7 +160,6 @@ ExposeHelper::ExposeHelper(UIEngine& uiEngine): mUiEngine(uiEngine)  {
                 if (auto c = _cast<AViewContainer>(self)) {
                     c->addView(view);
                     UIEngine::addChild(c, view);
-                    c->markMinContentSizeInvalid();
                 } else {
                     throw AException("addView() called on non-container type");
                 }
@@ -177,7 +172,6 @@ ExposeHelper::ExposeHelper(UIEngine& uiEngine): mUiEngine(uiEngine)  {
                     }
                     c->addView(index, view);
                     UIEngine::addChild(c, view);
-                    c->markMinContentSizeInvalid();
                 } else {
                     throw AException("addViewAtIndex() called on non-container type");
                 }
@@ -190,7 +184,6 @@ ExposeHelper::ExposeHelper(UIEngine& uiEngine): mUiEngine(uiEngine)  {
                     }
                     UIEngine::removeChild(c, c->getViews()[index - 1]);
                     c->removeView(index - 1);
-                    c->markMinContentSizeInvalid();
                 } else {
                     throw AException("removeViewAtIndex() called on non-container type");
                 }
@@ -237,7 +230,7 @@ ExposeHelper::ExposeHelper(UIEngine& uiEngine): mUiEngine(uiEngine)  {
             .method("updateLayout", [] (const _<AView>& self) {
                 APerformanceSection updateLayout("layout update");
                 if (auto c = _cast<AViewContainerBase>(self)) {
-                    c->applyGeometryToChildrenIfNecessary();
+                    c->requestLayout();
                 }
                 return clg::builder_return_type{};
             })
@@ -265,7 +258,6 @@ ExposeHelper::ExposeHelper(UIEngine& uiEngine): mUiEngine(uiEngine)  {
                 if (auto c = _cast<AViewContainer>(self)) {
                     c->removeView(view);
                     UIEngine::removeChild(c, view);
-                    c->markMinContentSizeInvalid();
                 } else {
                     throw AException("removeView() called on non-container type");
                 }
@@ -280,7 +272,7 @@ ExposeHelper::ExposeHelper(UIEngine& uiEngine): mUiEngine(uiEngine)  {
              })
             .builder_method<&AView::setSize>("setSize")
             .method("enableRenderToTexture", [](const _<AView>& self) {
-                IRenderViewToTexture::enableForView(AWindow::current()->getRenderingContext()->renderer(), *self);
+                // IRenderViewToTexture::enableForView(AWindow::current()->getRenderingContext()->renderer(), *self);
             })
             .builder_method<&AView::addAssName>("addStylesheetName")
             .builder_method<&AView::removeAssName>("removeStylesheetName")
@@ -289,9 +281,9 @@ ExposeHelper::ExposeHelper(UIEngine& uiEngine): mUiEngine(uiEngine)  {
                 auto size = self->getSize();
                 return std::make_tuple(size.x, size.y);
              })
-            .method<&AView::getMinimumSize>("getMinimumSize")
+            .method<&AView::getMinSize>("getMinimumSize")
             .method("getMinimumSize2", [](const _<AView>& self) {
-                auto size = self->getMinimumSize();
+                auto size = self->getMinSize();
                 return std::make_tuple(size.x, size.y);
              })
             .method("isPressed", [](const _<AView>& self) {

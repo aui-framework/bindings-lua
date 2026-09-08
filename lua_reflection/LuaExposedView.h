@@ -34,13 +34,8 @@ public:
     }
 
     void render(ARenderContext context) override;
-    void drawStencilMask(ARenderContext context) override;
     void postRender(ARenderContext context) override;
     bool consumesClick(const glm::ivec2& pos) override;
-    int getContentMinimumWidth() override;
-    int getContentMinimumHeight() override;
-    int getMinimumWidth() override;
-    int getMinimumHeight() override;
     bool onGesture(const glm::ivec2& origin, const AGestureEvent& event) override;
     void onMouseEnter() override;
     void onPointerMove(glm::vec2 pos, const APointerMoveEvent& event) override;
@@ -58,7 +53,6 @@ public:
     void onCharEntered(AChar c) override;
     bool handlesNonMouseNavigation() override;
     bool capturesFocus() override;
-    void setGeometry(int x, int y, int width, int height) override;
     AMenuModel composeContextMenu() override { return {}; }
 
 protected:

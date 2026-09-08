@@ -48,6 +48,7 @@ function(lua_reflection _input)
     set(_output ${CMAKE_CURRENT_BINARY_DIR}/lua_reflection/${_filename})
 
     add_custom_command(OUTPUT ${_output}
+            DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/lua_reflection.py" "${_input}"
             COMMAND Python::Interpreter ARGS ${CMAKE_CURRENT_SOURCE_DIR}/lua_reflection.py ${_input} ${_output})
 
     target_sources(${PROJECT_NAME} PRIVATE ${_output})

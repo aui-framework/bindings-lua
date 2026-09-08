@@ -22,8 +22,9 @@ public:
     void onPointerMove(glm::vec2 pos, const APointerMoveEvent& event) override;
     void onPointerPressed(const APointerPressedEvent& event) override;
     void onPointerReleased(const APointerReleasedEvent& event) override;
-    void applyGeometryToChildren() override;
     bool capturesFocus() override;
+
+    void onLayout(int w, int h);
 
     [[nodiscard]]
     bool isDragging() const noexcept {

@@ -63,7 +63,6 @@ _<MyScrollbar> MyScrollArea::createScrollbar(_<MyScrollbar> providedScrollbar, A
 
 void MyScrollArea::setContent(_<AView> view) {
     AScrollArea::setContents(std::move(view));
-    markMinContentSizeInvalid();
 }
 
 void MyScrollArea::onScroll(const AScrollEvent& event) {
