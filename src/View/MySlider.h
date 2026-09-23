@@ -24,7 +24,7 @@ public:
     void onPointerReleased(const APointerReleasedEvent& event) override;
     bool capturesFocus() override;
 
-    void onLayout(int w, int h);
+    void onLayout(glm::ivec2 size) override;
 
     [[nodiscard]]
     bool isDragging() const noexcept {

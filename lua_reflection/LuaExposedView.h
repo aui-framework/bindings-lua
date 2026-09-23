@@ -53,6 +53,8 @@ public:
     void onCharEntered(AChar c) override;
     bool handlesNonMouseNavigation() override;
     bool capturesFocus() override;
+    void onLayout(glm::ivec2 size) override;
+    glm::ivec2 onIntrinsicMeasure(AConstraints constraints) override;
     AMenuModel composeContextMenu() override { return {}; }
 
 protected:

@@ -286,6 +286,9 @@ ExposeHelper::ExposeHelper(UIEngine& uiEngine): mUiEngine(uiEngine)  {
                 auto size = self->getMinSize();
                 return std::make_tuple(size.x, size.y);
              })
+            .method("measure", [](const _<AView>& self, std::optional<AConstraints> constraints) {
+                return self->measure(constraints.value_or(AConstraints{}));
+            })
             .method("isPressed", [](const _<AView>& self) {
                 return self->isPressed();
             })
