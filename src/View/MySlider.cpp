@@ -64,6 +64,7 @@ void MySlider::updateSliderWithPosition(glm::ivec2 pointerPosition) {
 }
 
 void MySlider::onLayout(glm::ivec2 size) {
+    AViewContainerBase::onLayout(size);
     updateHandlePosition();
 }
 
