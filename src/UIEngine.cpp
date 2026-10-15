@@ -268,8 +268,8 @@ UIEngine::UIEngine(AViewContainer& surface):
             .builder<&MyText::setText>("setText")
             .ctor<clg::table_array>();
 
-    expose.view<AScrollbarButton>("ScrollbarButton")
-            .ctor<>();
+    // expose.view<AScrollbarButton>("ScrollbarButton")
+    //         .ctor<AScrollArea&>();
 
     expose.view<MyScrollbar>("Scrollbar")
             .method("scrolled", ForwardSignal<&AScrollbar::scrolled, AScrollbar>())

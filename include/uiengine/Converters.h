@@ -13,6 +13,7 @@
 
 #include "AUI/ASS/unset.h"
 #include "AUI/Platform/AInput.h"
+#include <AUI/Util/AConstraints.hpp>
 #include "AUI/Traits/values.h"
 #include "AUI/Util/AMetric.h"
 #include "AUI/Render/ARenderContext.h"
@@ -450,6 +451,34 @@ namespace clg {
                 {"offset", clg::ref::from_cpp(l, look.offset)},
                 {"rotation", clg::ref::from_cpp(l, look.rotation)},
                 {"scale", clg::ref::from_cpp(l, look.scale)},
+            });
+        }
+    };
+
+    template<>
+    struct converter<AConstraints> {
+        static converter_result<AConstraints> from_lua(lua_State* l, int n) {
+            if (lua_isnil(l, n) || n == 0) {
+                return AConstraints{};
+            }
+            auto r = clg::get_from_lua_raw<clg::table>(l, n);
+            if (r.is_error()) {
+                return r.error();
+            }
+            AConstraints c{};
+            auto& t = *r;
+            if (auto v = t["maxInline"].is<int>()) c.maxInline = *v;
+            if (auto v = t["maxBlock"].is<int>())  c.maxBlock  = *v;
+            if (auto v = t["minInline"].is<int>()) c.minInline = *v;
+            if (auto v = t["minBlock"].is<int>())  c.minBlock  = *v;
+            return c;
+        }
+        static int to_lua(lua_State* l, const AConstraints& v) {
+            return clg::push_to_lua(l, clg::table{
+                {"maxInline", clg::ref::from_cpp(l, v.maxInline)},
+                {"maxBlock",  clg::ref::from_cpp(l, v.maxBlock)},
+                {"minInline", clg::ref::from_cpp(l, v.minInline)},
+                {"minBlock",  clg::ref::from_cpp(l, v.minBlock)},
             });
         }
     };
