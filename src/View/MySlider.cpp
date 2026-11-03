@@ -76,6 +76,27 @@ void MySlider::updateHandlePosition() {
                           mHandle->getPosition().y });
 }
 
+void MySlider::connectLuaCallback(emits<aui::float_within_0_1>& signal, clg::function callback) {
+    auto luaSelf = dynamic_cast<clg::lua_self*>(this);
+    if (!luaSelf || luaSelf->luaDataHolder().isNull()) {
+        connect(signal, [callback = std::move(callback)](float v) { callback(v); });
+        return;
+    }
+    auto id = clg::light_userdata{static_cast<void*>(&signal)};
+    auto callbacks = luaSelf->luaDataHolder().get_or_create(id, [&] {
+        connect(signal, [luaSelf, id](float v) {
+            auto table = luaSelf->luaDataHolder()[id].as<clg::table_view>();
+            for (std::size_t i = 1, count = table.raw_len(); i <= count; ++i) {
+                if (auto func = table[i].ref(); func.isFunction()) {
+                    clg::function(std::move(func))(v);
+                }
+            }
+        });
+        return clg::table{};
+    }).as<clg::table_view>();
+    callbacks[callbacks.raw_len() + 1] = callback;
+}
+
 bool MySlider::capturesFocus() {
     return true; // we want to receive onPointerMove events even when pointer is outside
 }

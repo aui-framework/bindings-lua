@@ -85,7 +85,7 @@ public:
     template<typename Callback>
     ViewExposer& builder(std::string name, Callback&& callback) {
         using function_info = clg::state_interface::callable_class_info<decltype(&Callback::operator())>;
-        auto w = clg::state_interface(clg::state()).wrap_lambda_to_cfunction(make_the_builder(std::forward<Callback>(callback), function_info::args()), name);
+        auto w = clg::state_interface(clg::state()).wrap_lambda_to_cfunction(make_the_builder(std::forward<Callback>(callback), typename function_info::args()), name);
         mExtraMethods.push_back({std::move(name), w});
         return *this;
     }
@@ -113,6 +113,16 @@ public:
 
     template<typename... Args>
     void ctor() {
+        ctor<Args...>(NoOnCreated{});
+    }
+
+    /**
+     * @param onCreated called as onCreated(view, args...) after view's lua data holder is initialized. Use it to put
+     *        views passed to the constructor to cpp_children (see UIEngine::addChild).
+     */
+    template<typename... Args, typename OnCreated>
+    void ctor(OnCreated onCreated) {
+        static constexpr bool HAS_ON_CREATED = !std::is_same_v<OnCreated, NoOnCreated>;
         assert(("unnamed class could not have a constructor; use pushMetatable() instead", !mName.empty()));
         if (!mExtraMethods.empty()) {
             lua_State* L = clg::state();
@@ -122,8 +132,8 @@ public:
             auto indexForNewMT = clg::pop_from_lua<clg::table>(L);
 
 
-            clg::state_interface(clg::state()).register_function(mName, [name = mName, &uiEngine = mUiEngine, indexForNewMT = std::move(indexForNewMT)](lua_State* lua, Args... args) {
-                auto view = std::make_shared<LuaExposedView<Clazz>>(uiEngine, std::move(args)...);
+            clg::state_interface(clg::state()).register_function(mName, [name = mName, &uiEngine = mUiEngine, indexForNewMT = std::move(indexForNewMT), onCreated](lua_State* lua, Args... args) {
+                auto view = makeView<HAS_ON_CREATED>(uiEngine, args...);
                 view->addAssName(name);
 
                 auto ref = clg::ref::from_cpp(lua, view);
@@ -134,6 +144,10 @@ public:
                     destination[k] = v;
                 }
 
+                if constexpr (HAS_ON_CREATED) {
+                    onCreated(view, args...);
+                }
+
                 ref.push_value_to_stack(lua);
 
                 return fake{};
@@ -141,13 +155,37 @@ public:
 
             return;
         }
-        clg::state_interface(clg::state()).register_function(mName, [name = mName, &uiEngine = mUiEngine](Args... args) -> _<AView> {
-            auto view = std::make_shared<LuaExposedView<Clazz>>(uiEngine, std::move(args)...);
+        clg::state_interface(clg::state()).register_function(mName, [name = mName, &uiEngine = mUiEngine, onCreated](Args... args) -> _<AView> {
+            auto view = makeView<HAS_ON_CREATED>(uiEngine, args...);
             view->addAssName(name);
+
+            if constexpr (HAS_ON_CREATED) {
+                {
+                    // for data holder initializating
+                    clg::push_to_lua(clg::state(), view);
+                    clg::pop_from_lua<decltype(view)>(clg::state());
+                }
+                onCreated(view, args...);
+            }
 
             return view;
         });
     }
+
+private:
+    struct NoOnCreated {};
+
+    template<bool copyArgs, typename... Args>
+    static _<LuaExposedView<Clazz>> makeView(UIEngine& uiEngine, Args&... args) {
+        if constexpr (copyArgs) {
+            // arguments are still needed by onCreated
+            return std::make_shared<LuaExposedView<Clazz>>(uiEngine, args...);
+        } else {
+            return std::make_shared<LuaExposedView<Clazz>>(uiEngine, std::move(args)...);
+        }
+    }
+
+public:
 
 private:
     UIEngine& mUiEngine;

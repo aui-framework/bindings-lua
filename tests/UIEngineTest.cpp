@@ -1456,16 +1456,215 @@ callable = { govno=true }
 setmetatable(callable, {
   __call = function(self, view)
     test(self, view)
-    return 228
+    return true
   end
 })
 
-view.getContentMinimumWidth = callable
+view.capturesFocus = callable
 
-assert(view.getContentMinimumWidth.govno)
+assert(view.capturesFocus.govno)
 
 UI.setSurface(Centered { view })
 )");
-    EXPECT_EQ(By::name("Test").one()->getContentMinimumWidth(), 228);
+    EXPECT_TRUE(By::name("Test").one()->capturesFocus());
     EXPECT_TRUE(called);
+}
+
+namespace {
+/**
+ * Checks that views do not become immortal when a lua callback of a child captures its parent in upvalue.
+ *
+ * If the C++ side holds a child without a lua reference from the parent (cpp_children), child's userdata is finalized
+ * earlier than parent's and clg moves it to the lua registry. The callbacks of the child then become GC roots and keep
+ * the parent alive, which in turn keeps the child alive in C++.
+ */
+class UIEngineLeakTest : public UIEngineTest {
+protected:
+    void SetUp() override {
+        UIEngineTest::SetUp();
+        mLua.register_function("track", [this](const _<AView>& view) { mTracked << view; });
+        test(R"(
+function fullGc()
+  for i = 1, 4 do
+    collectgarbage()
+  end
+end
+
+-- makeParent(child) should return a view which holds child on C++ side
+function leakScenario(makeParent)
+  root = Vertical()
+  do
+    local parent
+    local child = View():clicked(function() parent.a = 1 end)
+    parent = makeParent(child)
+    root:addView(parent)
+    track(parent)
+    track(child)
+  end
+  fullGc() -- child is not referenced from lua anymore
+  root:removeAllViews()
+  root = nil
+  fullGc()
+end
+)");
+    }
+
+    void expectAllCollected() {
+        ASSERT_FALSE(mTracked.empty());
+        for (const auto& view : mTracked) {
+            EXPECT_TRUE(view.expired()) << "view is immortal: use_count=" << view.use_count();
+        }
+    }
+
+    AVector<_weak<AView>> mTracked;
+};
+}
+
+TEST_F(UIEngineLeakTest, AddView) {
+    mLua.do_string(R"(
+leakScenario(function(child)
+  local c = Vertical()
+  c:addView(child)
+  return c
+end)
+)");
+    expectAllCollected();
+}
+
+TEST_F(UIEngineLeakTest, InflateView) {
+    mLua.do_string(R"(
+leakScenario(function(child)
+  local c = Vertical()
+  c:inflateView(child)
+  return c
+end)
+)");
+    expectAllCollected();
+}
+
+TEST_F(UIEngineLeakTest, ScrollArea) {
+    mLua.do_string(R"(
+leakScenario(function(child)
+  return ScrollArea(child)
+end)
+)");
+    expectAllCollected();
+}
+
+TEST_F(UIEngineLeakTest, ScrollAreaSetContent) {
+    mLua.do_string(R"(
+leakScenario(function(child)
+  return ScrollArea(View()):setContent(child)
+end)
+)");
+    expectAllCollected();
+}
+
+TEST_F(UIEngineLeakTest, CustomScrollArea) {
+    mLua.do_string(R"(
+leakScenario(function(child)
+  return CustomScrollArea(child, VerticalScrollbar(), Scrollbar(ALayoutDirection.HORIZONTAL))
+end)
+)");
+    expectAllCollected();
+}
+
+TEST_F(UIEngineLeakTest, CustomScrollAreaScrollbar) {
+    // the scrollbar itself is a child which captures the area
+    mLua.do_string(R"(
+root = Vertical()
+do
+  local area
+  local scrollbar = VerticalScrollbar():clicked(function() area.a = 1 end)
+  area = CustomScrollArea(View(), scrollbar, Scrollbar(ALayoutDirection.HORIZONTAL))
+  root:addView(area)
+  track(area)
+  track(scrollbar)
+end
+fullGc()
+root:removeAllViews()
+root = nil
+fullGc()
+)");
+    expectAllCollected();
+}
+
+TEST_F(UIEngineLeakTest, AbsoluteLayout) {
+    mLua.do_string(R"(
+leakScenario(function(child)
+  return AbsoluteLayout { { view = child, pos = {0, 0} } }
+end)
+)");
+    expectAllCollected();
+}
+
+TEST_F(UIEngineLeakTest, Draggable) {
+    mLua.do_string(R"(
+leakScenario(function(child)
+  return Draggable(child)
+end)
+)");
+    expectAllCollected();
+}
+
+TEST_F(UIEngineLeakTest, Text) {
+    mLua.do_string(R"(
+leakScenario(function(child)
+  return Text { "hello", child }
+end)
+)");
+    expectAllCollected();
+}
+
+TEST_F(UIEngineLeakTest, TextSetText) {
+    mLua.do_string(R"(
+leakScenario(function(child)
+  return Text { "hello" }:setText { "world", child }
+end)
+)");
+    expectAllCollected();
+}
+
+TEST_F(UIEngineLeakTest, SliderValueChanging) {
+    mLua.do_string(R"(
+root = Vertical()
+do
+  local slider
+  slider = Slider():onValueChangingCallback(function(v) slider.a = v end)
+  root:addView(slider)
+  track(slider)
+end
+fullGc()
+root:removeAllViews()
+root = nil
+fullGc()
+)");
+    expectAllCollected();
+}
+
+TEST_F(UIEngineLeakTest, SliderValueChanged) {
+    mLua.do_string(R"(
+root = Vertical()
+do
+  local slider
+  slider = Slider():onValueChangedCallback(function(v) slider.a = v end)
+  root:addView(slider)
+  track(slider)
+end
+fullGc()
+root:removeAllViews()
+root = nil
+fullGc()
+)");
+    expectAllCollected();
+}
+
+TEST_F(UIEngineLeakTest, SliderCallbacksStillWork) {
+    mLua.do_string(R"(
+changing = 0
+slider = Slider():onValueChangingCallback(function(v) changing = v end)
+fullGc()
+slider:setValue(0.5)
+)");
+    EXPECT_FLOAT_EQ(mLua.do_string<float>("return changing"), 0.5f);
 }

@@ -135,6 +135,9 @@ ExposeHelper::ExposeHelper(UIEngine& uiEngine): mUiEngine(uiEngine)  {
             .method("inflateView", [&] (const _<AView>& self, const _<AView>& wrapped) {
                 if (auto c = _cast<AViewContainer>(self)) {
                     ALayoutInflater::inflate(*c, wrapped);
+                    if (wrapped) {
+                        UIEngine::addChild(c, wrapped);
+                    }
                 }
                 return clg::builder_return_type{};
             })

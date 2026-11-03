@@ -67,6 +67,33 @@ static _<AWindow> currentWindow() {
     return _cast<AWindow>(aui::ptr::shared_from_this(AWindow::current()));
 }
 
+/*
+ * Views held by a container on C++ side must also be referenced from container's cpp_children (UIEngine::addChild).
+ * Otherwise child's userdata is finalized earlier than container's and clg moves it to lua registry. Lua callbacks of
+ * the child become GC roots then; if they capture the container in upvalue, both views become immortal.
+ */
+
+static void setTextLuaChildren(const _<MyText>& text, const clg::table_array& items) {
+    UIEngine::removeAllChildren(text);
+    for (const auto& item : items) {
+        if (auto view = item.is<_<AView>>(); view && *view) {
+            UIEngine::addChild(text, *view);
+        }
+    }
+}
+
+static void setScrollAreaLuaChildren(const _<MyScrollArea>& area, const _<AView>& content) {
+    UIEngine::removeAllChildren(area);
+    if (content) {
+        UIEngine::addChild(area, content);
+    }
+    for (const auto& scrollbar : { area->verticalScrollbar(), area->horizontalScrollbar() }) {
+        if (_cast<ILuaExposedView>(scrollbar)) { // passed from lua to CustomScrollArea
+            UIEngine::addChild(area, scrollbar);
+        }
+    }
+}
+
 UIEngine::UIEngine(AViewContainer& surface):
         mSurface(surface)
 {
@@ -265,8 +292,11 @@ UIEngine::UIEngine(AViewContainer& surface):
 
 
     expose.view<MyText>("Text")
-            .builder<&MyText::setText>("setText")
-            .ctor<clg::table_array>();
+            .builder("setText", [](const _<MyText>& self, const clg::table_array& items) {
+                self->setText(items);
+                setTextLuaChildren(self, items);
+            })
+            .ctor<clg::table_array>(&setTextLuaChildren);
 
     // expose.view<AScrollbarButton>("ScrollbarButton")
     //         .ctor<AScrollArea&>();
@@ -301,24 +331,33 @@ UIEngine::UIEngine(AViewContainer& surface):
             .builder<&MyScrollArea::setScrollRatioX>("setScrollRatioX")
             .builder<&MyScrollArea::setScrollRatioY>("setScrollRatioY")
             .builder<&MyScrollArea::scrollTo2>("scrollTo")
-            .builder<&MyScrollArea::setContent>("setContent")
+            .builder("setContent", [](const _<MyScrollArea>& self, const _<AView>& content) {
+                self->setContent(content);
+                setScrollAreaLuaChildren(self, content);
+            })
             .builder<&AScrollArea::setWheelScrollable>("setWheelScrollable")
             .builder<&MyScrollArea::setAllowUserScroll>("setAllowUserScroll")
             .method("scroll", [](const _<MyScrollArea>& area, glm::ivec2 delta) { area->scroll(delta); })
             .method("setScroll", [](const _<MyScrollArea>& area, glm::ivec2 abs) { area->setScroll(abs); })
-            .ctor<_<AView>, _<MyScrollbar>, _<MyScrollbar>>();
+            .ctor<_<AView>, _<MyScrollbar>, _<MyScrollbar>>([](const _<MyScrollArea>& self, const _<AView>& content,
+                                                               const _<MyScrollbar>&, const _<MyScrollbar>&) {
+                setScrollAreaLuaChildren(self, content);
+            });
 
     expose.view<MyScrollArea>("ScrollArea")
             .builder<&MyScrollArea::setStickToEnd>("setStickToEnd")
             .builder<&MyScrollArea::setScrollRatioX>("setScrollRatioX")
             .builder<&MyScrollArea::setScrollRatioY>("setScrollRatioY")
             .builder<&MyScrollArea::scrollTo2>("scrollTo")
-            .builder<&MyScrollArea::setContent>("setContent")
+            .builder("setContent", [](const _<MyScrollArea>& self, const _<AView>& content) {
+                self->setContent(content);
+                setScrollAreaLuaChildren(self, content);
+            })
             .builder<&MyScrollArea::setAllowUserScroll>("setAllowUserScroll")
             .builder<&AScrollArea::setWheelScrollable>("setWheelScrollable")
             .method("scroll", [](const _<MyScrollArea>& area, glm::ivec2 delta) { area->scroll(delta); })
             .method("setScroll", [](const _<MyScrollArea>& area, glm::ivec2 abs) { area->setScroll(abs); })
-            .ctor<_<AView>>();
+            .ctor<_<AView>>(&setScrollAreaLuaChildren);
 
     expose.view<MyDrawableView>("Drawable")
             .builder<&MyDrawableView::animationFinished>("animationFinished")
@@ -360,11 +399,13 @@ UIEngine::UIEngine(AViewContainer& surface):
 
     lua.register_function("AbsoluteLayout", [this](const clg::table_array& array) {
         auto layout = std::make_unique<AAbsoluteLayout>();
+        AVector<_<AView>> children;
         for (const auto& v : array) {
             auto item = v.as<clg::table_view>();
             auto view = item["view"].ref().as<_<AView>>();
             auto pos = item["pos"].ref().as<glm::vec2>();
 
+            children << view;
             layout->add({
                 .view = std::move(view),
                 .pivotX = AMetric(pos.x, AMetric::T_DP),
@@ -372,26 +413,47 @@ UIEngine::UIEngine(AViewContainer& surface):
             });
         }
         auto container = _new<LuaExposedView<AViewContainer>>(*this);
+        {
+            // for data holder initializating
+            clg::push_to_lua(clg::state(), container);
+            clg::pop_from_lua<decltype(container)>(clg::state());
+        }
         container->setLayout(std::move(layout));
+        for (const auto& child : children) {
+            if (child) {
+                UIEngine::addChild(container, child);
+            }
+        }
         return container;
     });
 
     lua.register_function("Draggable", [this](const _<AView>& wrapper) {
-        return wrapViewWithLuaWrapper(ADragArea::convertToDraggable(wrapper, false));
+        auto container = wrapViewWithLuaWrapper(ADragArea::convertToDraggable(wrapper, false));
+        UIEngine::addChild(container, wrapper);
+        return container;
     });
 
     lua.register_function("GridSplitter", [this](clg::table_array luaItems) {
-        auto view = AGridSplitter::Builder().withItems(AVector<AVector<_<AView>>>::fromRange(aui::range(luaItems), [](const clg::ref& luaRow) {
-            return AVector<_<AView>>::fromRange(aui::range(luaRow.as<clg::table_array>()), [](const clg::ref& r) -> _<AView> {
+        AVector<_<AView>> children;
+        auto view = AGridSplitter::Builder().withItems(AVector<AVector<_<AView>>>::fromRange(aui::range(luaItems), [&](const clg::ref& luaRow) {
+            return AVector<_<AView>>::fromRange(aui::range(luaRow.as<clg::table_array>()), [&](const clg::ref& r) -> _<AView> {
                 try {
-                    return r.as<_<AView>>();
+                    auto child = r.as<_<AView>>();
+                    children << child;
+                    return child;
                 } catch(...) {
                     return _new<ASpacerExpanding>();
                 }
             });
         })).noDefaultSpacers().build() AUI_OVERRIDE_STYLE { Expanding{} };
 
-        return wrapViewWithLuaWrapper(view);
+        auto container = wrapViewWithLuaWrapper(view);
+        for (const auto& child : children) {
+            if (child) {
+                UIEngine::addChild(container, child);
+            }
+        }
+        return container;
     });
 
 
@@ -661,7 +723,7 @@ std::string UIEngine::clgDump(clg::ref any) {
     return any.debug_str();
 }
 
-clg::table_view UIEngine::luaChildrenTable(const _<AViewContainer>& cont) {
+clg::table_view UIEngine::luaChildrenTable(const _<AView>& cont) {
     if (auto luaView = _cast<ILuaExposedView>(cont)) {
         return luaView->luaDataHolder()
                     .get_or_create("cpp_children", []() { return clg::table{}; })
@@ -671,17 +733,17 @@ clg::table_view UIEngine::luaChildrenTable(const _<AViewContainer>& cont) {
     return clg::ref(nullptr);
 }
 
-void UIEngine::addChild(const _<AViewContainer>& cont, const _<AView>& view) {
+void UIEngine::addChild(const _<AView>& cont, const _<AView>& view) {
     assert(view != nullptr);
     AUI_NULLSAFE(luaChildrenTable(cont))[view] = true;
 }
 
-void UIEngine::removeChild(const _<AViewContainer>& cont, const _<AView>& view) {
+void UIEngine::removeChild(const _<AView>& cont, const _<AView>& view) {
     assert(view != nullptr);
     AUI_NULLSAFE(luaChildrenTable(cont))[view] = clg::ref(nullptr);
 }
 
-void UIEngine::removeAllChildren(const _<AViewContainer>& cont) {
+void UIEngine::removeAllChildren(const _<AView>& cont) {
     if (auto luaView = _cast<ILuaExposedView>(cont)) {
         luaView->luaDataHolder()["cpp_children"] = clg::ref(nullptr);
     }
@@ -689,6 +751,11 @@ void UIEngine::removeAllChildren(const _<AViewContainer>& cont) {
 
 _<AView> UIEngine::wrapViewWithLuaWrapper(const _<AView>& v) {
     auto container = _new<LuaExposedView<AViewContainer>>(*this);
+    {
+        // for data holder initializating
+        clg::push_to_lua(clg::state(), container);
+        clg::pop_from_lua<decltype(container)>(clg::state());
+    }
     v->setExpanding();
     container->setLayout(std::make_unique<AStackedLayout>());
     container->addView(v);

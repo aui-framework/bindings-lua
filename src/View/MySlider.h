@@ -56,10 +56,10 @@ public:
     }
 
     void onValueChangingCallback(clg::function callback) {
-        connect(valueChanging, [callback = std::move(callback)](float v) { callback(v); });
+        connectLuaCallback(valueChanging, std::move(callback));
     }
     void onValueChangedCallback(clg::function callback) {
-        connect(valueChanged, [callback = std::move(callback)](float v) { callback(v); });
+        connectLuaCallback(valueChanged, std::move(callback));
     }
 
 signals:
@@ -78,5 +78,13 @@ private:
     void updateSliderWithPosition(glm::ivec2 pointerPosition);
 
     void updateHandlePosition();
+
+    /**
+     * @brief Stores the callback in slider's lua data holder instead of C++ lambda.
+     * @details
+     * clg::function captured by C++ lambda references the callback from lua registry, so the slider captured in
+     * callback's upvalue would never be collected.
+     */
+    void connectLuaCallback(emits<aui::float_within_0_1>& signal, clg::function callback);
 };
 

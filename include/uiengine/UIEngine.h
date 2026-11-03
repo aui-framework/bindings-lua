@@ -44,13 +44,13 @@ public:
      */
     static std::string clgDump(clg::ref any);
 
-    static clg::table_view luaChildrenTable(const _<AViewContainer>& cont);
+    static clg::table_view luaChildrenTable(const _<AView>& cont);
 
-    static void addChild(const _<AViewContainer>& cont, const _<AView>& view);
+    static void addChild(const _<AView>& cont, const _<AView>& view);
 
-    static void removeChild(const _<AViewContainer>& cont, const _<AView>& view);
+    static void removeChild(const _<AView>& cont, const _<AView>& view);
 
-    static void removeAllChildren(const _<AViewContainer>& cont);
+    static void removeAllChildren(const _<AView>& cont);
 
     _<AView> wrapViewWithLuaWrapper(const _<AView>& v);
 
