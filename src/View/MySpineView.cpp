@@ -61,7 +61,13 @@ MySpineView::MySpineView(const MySpineView::SpineCache& cacheEntry):
 }
 
 spine::Animation& MySpineView::getAnimation(std::string_view name) {
-    auto animation = skeletonData()->findAnimation(name.data());
+    auto& data = skeletonData();
+    if (data == nullptr) {
+        // findAnimation would segfault on null skeleton data instead of throwing
+        throw AException("{}: skeleton data is null (animation: {})"_format(mPrefix, name));
+    }
+    // string_view is not guaranteed to be null-terminated
+    auto animation = data->findAnimation(std::string(name).c_str());
     if (animation == nullptr) {
         throw AException("{}: animation not found: {}"_format(mPrefix, name));
     }
