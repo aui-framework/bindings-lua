@@ -181,6 +181,9 @@ UIEngine::UIEngine(AViewContainer& surface):
                 return w->getDpiRatio();
             }
             return 0;
+        })
+        .staticFunction("close", []() {
+            AUI_NULLSAFE(currentWindow())->close();
         });
 
     lua.register_function<clgDump>("clgDump");
